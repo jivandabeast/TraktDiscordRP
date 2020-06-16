@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from urllib.request import urlopen, Request
 from pypresence import Presence
 import dateutil.parser as dp
@@ -14,8 +15,6 @@ headers = {
 
 RPC = Presence(credentials.discordclientid)
 RPC.connect()
-# RPC.close()
-
 gmt = pytz.timezone('GMT')
 est = pytz.timezone('US/Eastern')
 
@@ -60,4 +59,5 @@ while True:
         updateRPC(newstate, newdetails, starttime, endtime, media)
     except:
         print('Nothing is being played')
+        RPC.clear()
     time.sleep(15)
