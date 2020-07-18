@@ -28,16 +28,20 @@ def updateRPC(state, details, starttime, endtime, media):
     RPC.update(state=state, details=details, start=starttime, end=endtime, large_image=large, small_image="trakt")
 
 while True:
-    request = Request('https://api.trakt.tv/users/jivandabeast/watching', headers=headers)
-    response_body = urlopen(request).read()
+    try:
+        request = Request('https://api.trakt.tv/users/jivandabeast/watching', headers=headers)
+        response_body = urlopen(request).read()
+    except:
+        print("Error trying to process API request")
     try:
         data = json.loads(response_body)
         if(data['type'] == 'episode'):
             print('The episode title is:', data['episode']['title'])
             print('The show is:', data['show']['title'])
             print('The IMDB ID is:', data['show']['ids']['imdb'])
-            newdetails=data['episode']['title']
-            newstate='https://www.imdb.com/title/' + data['show']['ids']['imdb']
+            newdetails=data['show']['title']
+            newstate=data['episode']['title']
+#            newstate='https://www.imdb.com/title/' + data['show']['ids']['imdb']
             media='tv'
         elif(data['type'] == 'movie'):
             print('The name of the movie is:', data['movie']['title'])
