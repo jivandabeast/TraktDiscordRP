@@ -29,7 +29,8 @@ def updateRPC(state, details, starttime, endtime, media):
 
 while True:
     try:
-        request = Request('https://api.trakt.tv/users/jivandabeast/watching', headers=headers)
+      # replace [username] with your trakt.tv username
+        request = Request('https://api.trakt.tv/users/[username]/watching', headers=headers)
         response_body = urlopen(request).read()
     except:
         print("Error trying to process API request")
