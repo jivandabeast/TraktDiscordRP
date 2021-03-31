@@ -55,11 +55,11 @@ while True:
         starttime = data['started_at']
         starttime = dp.parse(starttime)
         starttime = starttime.astimezone(est)
-        starttime = starttime.strftime('%s')
+        starttime = starttime.timestamp()
         endtime = data['expires_at']
         endtime = dp.parse(endtime)
         endtime = endtime.astimezone(est)
-        endtime = endtime.strftime('%s')
+        endtime = endtime.timestamp()
         print(starttime, endtime)
         updateRPC(newstate, newdetails, starttime, endtime, media)
     except:
