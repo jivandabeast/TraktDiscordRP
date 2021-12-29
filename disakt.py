@@ -19,50 +19,57 @@ gmt = pytz.timezone('GMT')
 est = pytz.timezone('US/Eastern')
 
 def updateRPC(state, details, starttime, endtime, media):
-    if media == 'tv':
-        large = "tv"
-    elif media == 'movie':
-        large = "movie"
-    else:
-        print('media type error')
-    RPC.update(state=state, details=details, start=starttime, end=endtime, large_image=large, small_image="trakt")
+    RPC.update(state=state, details=details, start=starttime, end=endtime, large_image=media, small_image="trakt")
 
+def extractData(data):
+    if(data['type'] == 'episode'):
+        print('Watching', data['show']['title'], 'episode ', data['episode']['title'])
+        details=data['show']['title']
+        state=data['episode']['title']
+        media='tv'
+    elif(data['type'] == 'movie'):
+        print('Watching', data['movie']['title'])
+        details=data['movie']['title']
+        state='https://www.imdb.com/title/' + data['movie']['ids']['imdb']
+        media='movie'
+    else:
+        print('Error determining media type')
+    
+    start = dp.parse(data['started_at']).astimezone(est).timestamp()
+    end = dp.parse(data['expires_at']).astimezone(est).timestamp()
+
+    return details, state, media, start, end
+
+status = 0
 while True:
     try:
-      # replace [username] with your trakt.tv username
-        request = Request('https://api.trakt.tv/users/[username]/watching', headers=headers)
+        request = Request('https://api.trakt.tv/users/' + credentials.traktusername + '/watching', headers=headers)
         response_body = urlopen(request).read()
-    except:
-        print("Error trying to process API request")
-    try:
-        data = json.loads(response_body)
-        if(data['type'] == 'episode'):
-            print('The episode title is:', data['episode']['title'])
-            print('The show is:', data['show']['title'])
-            print('The IMDB ID is:', data['show']['ids']['imdb'])
-            newdetails=data['show']['title']
-            newstate=data['episode']['title']
-#            newstate='https://www.imdb.com/title/' + data['show']['ids']['imdb']
-            media='tv'
-        elif(data['type'] == 'movie'):
-            print('The name of the movie is:', data['movie']['title'])
-            print('The IMDB ID is:', data['movie']['ids']['imdb'])
-            newdetails=data['movie']['title']
-            newstate='https://www.imdb.com/title/' + data['movie']['ids']['imdb']
-            media='movie'
-        else:
-            print('Ya fucked bud')
-        starttime = data['started_at']
-        starttime = dp.parse(starttime)
-        starttime = starttime.astimezone(est)
-        starttime = starttime.timestamp()
-        endtime = data['expires_at']
-        endtime = dp.parse(endtime)
-        endtime = endtime.astimezone(est)
-        endtime = endtime.timestamp()
-        print(starttime, endtime)
-        updateRPC(newstate, newdetails, starttime, endtime, media)
-    except:
-        print('Nothing is being played')
-        RPC.clear()
-    time.sleep(15)
+        try:
+            if response_body == b'':
+                if status == 1:
+                    print('Nothing is being played')
+                    RPC.clear()
+                    status = 0
+                else:
+                    pass
+            else:
+                data = json.loads(response_body)
+                try:
+                    details, state, media, start, end = extractData(data)
+                    updateRPC(state, details, start, end, media)
+                    status = 1
+                except Exception as e:
+                    print('Error updating status ', e)
+                
+        except Exception as e:
+            print('Error processing data: ', e)
+            print('Response Body: ')
+            print(response_body)
+            status = 1
+
+    except Exception as e:
+        print("Error trying to process API request", e)
+        status = 1
+    
+    time.sleep(60)
