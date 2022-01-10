@@ -18,19 +18,30 @@ RPC.connect()
 gmt = pytz.timezone('GMT')
 est = pytz.timezone('US/Eastern')
 
-def updateRPC(state, details, starttime, endtime, media):
-    RPC.update(state=state, details=details, start=starttime, end=endtime, large_image=media, small_image="trakt")
+def updateRPC(state, details, starttime, endtime, media, links):
+    RPC.update(state=state, details=details, start=starttime, end=endtime, large_image=media, small_image="trakt", buttons=links)
+
+def getMovieRating(slug):
+    try:
+        request = Request('https://api.trakt.tv/movies/' + str(slug) + '?extended=full', headers=headers)
+        response_body = urlopen(request).read()
+        return json.loads(response_body)['rating']
+    except Exception as e:
+        print('Could not retrieve movie rating, ' + e)
+        return ('Not Found')
 
 def extractData(data):
     if(data['type'] == 'episode'):
         print('Watching', data['show']['title'], 'episode ', data['episode']['title'])
         details=data['show']['title']
         state='S' + str(data['episode']['season']) + 'E' + str(data['episode']['number']) + ' - ' + str(data['episode']['title'])
+        link='https://www.imdb.com/title/' + data['show']['ids']['imdb']
         media='tv'
     elif(data['type'] == 'movie'):
         print('Watching', data['movie']['title'])
         details=data['movie']['title']
-        state='https://www.imdb.com/title/' + data['movie']['ids']['imdb']
+        link='https://www.imdb.com/title/' + data['movie']['ids']['imdb']
+        state='Rating: ' + str(round(getMovieRating(data['movie']['ids']['slug']), 2)) + '/10'
         media='movie'
     else:
         print('Error determining media type')
@@ -38,7 +49,7 @@ def extractData(data):
     start = dp.parse(data['started_at']).astimezone(est).timestamp()
     end = dp.parse(data['expires_at']).astimezone(est).timestamp()
 
-    return details, state, media, start, end
+    return details, state, media, start, end, link
 
 status = 0
 while True:
@@ -56,8 +67,9 @@ while True:
             else:
                 data = json.loads(response_body)
                 try:
-                    details, state, media, start, end = extractData(data)
-                    updateRPC(state, details, start, end, media)
+                    details, state, media, start, end, link = extractData(data)
+                    links = [{'label': 'IMDB', 'url': link}]
+                    updateRPC(state, details, start, end, media, links)
                     status = 1
                 except Exception as e:
                     print('Error updating status ', e)
