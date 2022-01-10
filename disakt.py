@@ -25,7 +25,7 @@ def extractData(data):
     if(data['type'] == 'episode'):
         print('Watching', data['show']['title'], 'episode ', data['episode']['title'])
         details=data['show']['title']
-        state=data['episode']['title']
+        state='S' + str(data['episode']['season']) + 'E' + str(data['episode']['number']) + ' - ' + str(data['episode']['title'])
         media='tv'
     elif(data['type'] == 'movie'):
         print('Watching', data['movie']['title'])
